@@ -1,0 +1,124 @@
+{
+    "config": {
+        "abort": {
+            "device_reserved": "Check status of other PiJuice installations - they might have been disabled and blocking hardware for other installations",
+            "no_device_found": "PiJuice hardware not found, check i2c settings and installation"
+        },
+        "error": {},
+        "step": {
+            "user": {
+                "data": {
+                    "i2c_address": "i2c address",
+                    "i2c_bus": "i2c bus"
+                },
+                "title": "Configure PiJuice UPS HAT"
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "battery_status": {
+                "state": {
+                    "CHARGING_FROM_5V_IO": "Charging from I/O",
+                    "CHARGING_FROM_IN": "Charging from in",
+                    "NORMAL": "Normal",
+                    "NOT_PRESENT": "Not present"
+                }
+            },
+            "ext_power": {
+                "state": {
+                    "False": "Not present",
+                    "True": "Present"
+                }
+            },
+            "power_input": {
+                "state": {
+                    "BAD": "Bad",
+                    "NOT_PRESENT": "Not present",
+                    "PRESENT": "Present",
+                    "WEAK": "Weak"
+                }
+            }
+        }
+    },
+    "options": {
+        "abort": {
+            "fw_update_completed": "Firmware update completed"
+        },
+        "progress": {
+            "fw_p_1": "10% done",
+            "fw_p_10": "100% done",
+            "fw_p_2": "20% done",
+            "fw_p_3": "30% done",
+            "fw_p_4": "40% done",
+            "fw_p_5": "50% done",
+            "fw_p_6": "60% done",
+            "fw_p_7": "70% done",
+            "fw_p_8": "80% done",
+            "fw_p_9": "90% done",
+            "fw_started": "Started"
+        },
+        "step": {
+            "firmware_confirm": {
+                "description": "Confirm firmware upgrade",
+                "title": "Firmware upgrade"
+            },
+            "firmware_finish": {
+                "description": "Firmware upgrade completed",
+                "title": "Firmware upgrade"
+            },
+            "firmware_progress": {
+                "description": "Firmware upgrade in progress...",
+                "title": "Firmware upgrade"
+            },
+            "init": {
+                "data": {
+                    "battery_profile_status": "Battery Profile",
+                    "battery_temp_sense_config": "Battery Temperature Sense",
+                    "diag_log_config": "Select device's internal logging options",
+                    "power_off_delay": "Power off delay (s)",
+                    "scan_interval": "Sensor refresh interval (s)",
+                    "wake_on_delta": "Wake on delta"
+                },
+                "description": "Select/specify parameters for PiJuice UPS HAT"
+            }
+        }
+    },
+    "selector": {
+        "battery_profile_status": {
+            "options" : {
+                "PJZERO_1000": "PJZERO 1000",
+                "BP7X_1820": "BP7X 1820",
+                "SNN5843_2300": "SNN5843 2300",
+                "PJLIPO_12000": "PJLIPO 12000",
+                "PJLIPO_5000": "PJLIPO 5000",
+                "PJBP7X_1600": "PJBP7X 1600",
+                "PJSNN5843_1300": "PJSNN5843 1300",
+                "PJZERO_1200": "PJZERO 1200",
+                "BP6X_1400": "BP6X 1400",
+                "PJLIPO_600": "PJLIPO 600",
+                "PJLIPO_500": "PJLIPO 500",
+                "PJLIPO_2500": "PJLIPO 2500"
+            }
+        },
+        "battery_temp_sense_config": {
+            "options": {
+                "NOT_USED": "temperature not measured",
+                "NTC": "use battery sensor",
+                "ON_BOARD": "use on board sensor",
+                "AUTO_DETECT": "HAT to select sensor"
+            }
+        },
+        "diag_log_config": {
+            "options": {
+                "5VREG_OFF": "log 5V regulator power off",
+                "5VREG_ON": "log 5V regulator power on",
+                "ALARM_EVT": "log RTC alarm peripheral interrupts",
+                "MCU_RESET": "log MCU resets",
+                "OTHER": "log other",
+                "RESERVED2": "reserved",
+                "WAKEUP_EVT": "log wakeup events"
+            }
+        }
+    }
+}

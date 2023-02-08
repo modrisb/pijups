@@ -1,0 +1,57 @@
+"""The PiJuPS HAT integration - constant definitions."""
+DOMAIN = "pijups"
+BASE = "base"
+DEFAULT_NAME = "PiJups"
+
+CONF_I2C_ADDRESS = "i2c_address"
+CONF_I2C_BUS = "i2c_bus"
+CONF_UPS_DELAY = "power_off_delay"
+CONF_UPS_WAKEON_DELTA = "wake_on_delta"
+CONF_BATTERY_PROFILE = "battery_profile_status"
+CONF_BATTERY_TEMP_SENSE_CONFIG = "battery_temp_sense_config"
+CONF_DIAG_LOG_CONFIG = "diag_log_config"
+CONF_FIRMWARE_SELECTION = "fw_upgrade_config"
+CONF_FW_UPGRADE_PATH = "fw_upgrade_path"
+CONF_BUS_OPTIONS = "bus_options"
+CONF_ADDRESS_OPTIONS = "address_options"
+
+CONF_I2C_BUSES_TO_SEARCH = (1, 2)
+CONF_I2C_ADDRESSES_TO_SEARCH = range(0, 0xFF)
+CONF_MANUFACTURER = "Pi Supply"
+CONF_MODEL = "PiJuice HAT"
+
+CONF_FLOW_NO_DEVICE_FOUND = "no_device_found"
+CONF_FLOW_DEVICE_RESERVED = "device_reserved"
+CONF_FLOW_FW_DONE = "fw_update_completed"
+
+DEFAULT_I2C_ADDRESS = 0x14
+DEFAULT_I2C_BUS = 1
+DEFAULT_UPS_DELAY = 120
+DEFAULT_UPS_WAKEON_DELTA = -1
+DEFAULT_BATTERY_PROFILE = "DEFAULT"
+DEFAULT_BATTERY_TEMP_SENSE = "AUTO_DETECT"
+DEFAULT_SCAN_INTERVAL = 5
+DEFAULT_SLOW_SCAN_COUNT = 6
+DEFAULT_FAST_SCAN_COUNT = 1
+
+DEFAULT_FIRMWARE_PATH = "/config/custom_components"
+DEFAULT_NO_FIRMWARE_UPGRADE = "No firmware upgrade"
+DEFAULT_FW_UTILITY_NAME = "pijuiceboot"
+FW_PROGRESS_INTERVAL = 4
+FW_PAGE_COUNT_LINE_PREFIX = "page count "
+FW_PROCESSED_PAGE_LINE_PREFIX = "Page "
+
+MAX_WAKEON_DELTA = 80
+
+PIJU_SENSOR_CHARGE = "Charge"
+PIJU_SENSOR_BATTERY_STATUS = "Battery status"
+PIJU_SENSOR_TEMPERATURE = "Temperature"
+PIJU_SENSOR_POWER_INPUT_STATUS = "Power input status"
+PIJU_SENSOR_BATTERY_VOLTAGE = "Battery voltage"
+PIJU_SENSOR_BATTERY_CURRENT = "Battery current"
+PIJU_SENSOR_POWER_INPUT_IO_STATUS = "Power input IO status"
+PIJU_SENSOR_IO_VOLTAGE = "IO voltage"
+PIJU_SENSOR_IO_CURRENT = "IO current"
+PIJU_SENSOR_EXTERNAL_POWER = "External Power"
+
+SENSOR_ENTITY = "sensor.entity"

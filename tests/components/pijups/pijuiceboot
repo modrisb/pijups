@@ -1,0 +1,46 @@
+#!/bin/bash
+NUMPAGES=326
+echo "using address $1"
+sleep 0.003
+echo "Input file $2"
+sleep 0.021
+echo "Starting bootloader"
+sleep 0.038
+echo "Starting bootloader old firmware"
+sleep 0.030
+echo "Sending get command"
+sleep 0.032
+echo "bytesRead 13  dataLen 11"
+sleep 0.023
+echo "ack 79"
+sleep 0.014
+echo "data: b, 10, 92"
+sleep 0.015
+echo "data received 11"
+sleep 0.017
+echo "bootloader version: b"
+sleep 0.023
+echo "commands: 10, 0, 1, 2, 11, 21, 31, 44, 63, 73"
+sleep 0.016
+echo "erase page count 41"
+sleep 0.027
+echo "first page erase succcess 0"
+sleep 0.024
+echo "erase success 0"
+sleep 0.015
+echo "Erase success"
+sleep 0.048
+echo "page count $NUMPAGES"
+sleep 0.022
+ for (( page=$NUMPAGES-1; page>=0; page-- ))
+ do
+    echo "mem data read 256, 256"
+    sleep 0.030
+    echo "Page $page programmed successfully"
+    sleep 0.036
+ done
+echo "EEPROM programming finished successfully"
+sleep 0.037
+echo "Code executed successfully"
+sleep 0.037
+
