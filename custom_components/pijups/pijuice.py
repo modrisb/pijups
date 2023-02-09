@@ -7,8 +7,6 @@ import threading
 import time
 
 from smbus2 import SMBus
-import logging
-_LOGGER = logging.getLogger(__name__)
 
 pijuice_hard_functions = [
     "HARD_FUNC_POWER_ON",
@@ -71,7 +69,6 @@ class PiJuiceInterface(object):
             self.comError = True
             self.errTime = time.time()
             self.d = None
-            _LOGGER.info(f"_Read {self.comError} {self.errTime} {self.cmd:02x}")
 
     def _Write(self):
         try:
@@ -80,7 +77,6 @@ class PiJuiceInterface(object):
         except:  # IOError:
             self.comError = True
             self.errTime = time.time()
-            _LOGGER.info(f"_Write {self.comError} {self.errTime} {self.cmd:02x} {self.d}")
 
     def _DoTransfer(self, oper):
         if (self.t is not None and self.t.is_alive()) or (
@@ -1096,7 +1092,6 @@ class PiJuiceConfig(object):
             return {"error": "BAD_ARGUMENT"}
         d = [nv | chEn]
         ret = self.interface.WriteDataVerify(self.CHARGING_CONFIG_CMD, d)
-        _LOGGER.info(f"SetChargingConfig WriteDataVerify {ret} {non_volatile}")
         if not non_volatile and ret["error"] == "WRITE_FAILED":
             # 'WRITE_FAILED' error when config corresponds to what is stored in EEPROM
             #  and non_volatile argument is False
@@ -1831,7 +1826,7 @@ def get_versions():
     firmware_version = firmware_version_dict.get("data", {}).get("version")
     return __version__, firmware_version, os_version
 
-"""
+
 if __name__ == "__main__":
     if sys.argv[1] == "--version":
         sw_version, fw_version, os_version = get_versions()
@@ -1840,4 +1835,3 @@ if __name__ == "__main__":
             fw_version = "No connection to PiJuice"
         print("Firmware version: %s" % fw_version)
         print("OS version: %s" % os_version)
-"""
