@@ -979,6 +979,8 @@ class PiJuicePower(object):
                 d = nv | 0x7F
             elif int(arg) >= 0 and int(arg) <= 100:
                 d = nv | int(arg)
+            else:
+                return {"error": "BAD_ARGUMENT"}
         except:
             return {"error": "BAD_ARGUMENT"}
         return self.interface.WriteData(self.WAKEUP_ON_CHARGE_CMD, [d])
@@ -1826,7 +1828,7 @@ def get_versions():
     firmware_version = firmware_version_dict.get("data", {}).get("version")
     return __version__, firmware_version, os_version
 
-
+"""
 if __name__ == "__main__":
     if sys.argv[1] == "--version":
         sw_version, fw_version, os_version = get_versions()
@@ -1835,3 +1837,4 @@ if __name__ == "__main__":
             fw_version = "No connection to PiJuice"
         print("Firmware version: %s" % fw_version)
         print("OS version: %s" % os_version)
+"""

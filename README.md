@@ -18,13 +18,14 @@ PiJups exposes [PiJuice](https://github.com/PiSupply/PiJuice) sensor values in [
 * External Power
 
 ## Prerequisite
-Enable I2C bus on the host system.<br>
-Like described in : https://www.home-assistant.io/common-tasks/os/#enable-i2c<br>
+Enable I2C bus on the host system, like described in : https://www.home-assistant.io/common-tasks/os/#enable-i2c<br>
 
 ## Manual installation 
 1. Inside the `custom_components` directory, create a new folder called `pijups`.
 2. Download all files from the `custom_components/pijuice/` repository to this directory `custom_components/pijups`.
 3. Install integration from Home Assistant Settings/Devices & Services/Add Integration. HAT should be detected automatically within ~ 20s.
+
+HACS might be used for installation too - check repository 'PiJuice Hat'.
 
 ## Configuration
 Parameters for hardware configuration, default values reflect current HAT's settings: 

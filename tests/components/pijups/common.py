@@ -29,6 +29,10 @@ CONFIG_OPTIONS = {
     CONF_UPS_WAKEON_DELTA: DEFAULT_UPS_WAKEON_DELTA,
     CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
 }
+
+I2C_CMD_EXECUTION_TIMEOUT = 0.11
+I2C_CMD_EXCEPTION_TIMEOUT = 4
+
 # pytest tests/components/pijups/
 # pytest tests/components/pijups/ --cov=homeassistant.components.pijups --cov-report term-missing -vv
 

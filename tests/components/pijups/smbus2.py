@@ -70,7 +70,14 @@ class SMBus:
         self.corrupt_next_read_call = False
         self.simulate_recoverable_chksum_issue = False
         self.simulate_data_curruption = False
+        self.temp_read_cmd = 0
+        self.temp_read_cmd_buff = None
         self.reset_device()
+
+    def io_buffer_next_read_call(self, cmd, data):
+        if data is not None:
+            self.temp_read_cmd = cmd
+            self.temp_read_cmd_buff = data.copy()
 
     def io_error_next_read_call(self):
         self.signal_error_next_read_call = True
@@ -114,207 +121,819 @@ class SMBus:
         self.logging_buffers = [
             [
                 0,
-                6,
-                64,
-                71,
+                6,      # [ 1] WAKEUP_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] triggers
+                200,    # [11] status
+                9,      # [12] GPIO_5V REGULATOR
+                240,    # [13] wkupOnChargeCfg
+                0,      # [14] wkupOnChargeCfg
+                194,    # [15] battery charge
+                52,     # [16] temperature
+                161,    # [17] batVolt
+                15,     # [18] batVolt
+                64,     # [19] gpio5V
+                20,     # [20] gpio5V
+                124,    # [21] curr5Vgpio
+                1,      # [22] curr5Vgpio
+                0,      # [23]
+                0,      # [24]
+                0,      # [25]
+                0,      # [26]
+                0,      # [27]
+                0,      # [28]
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                10,
+                6,      # [ 1] WAKEUP_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] triggers
+                200,    # [11] status
+                9,      # [12] GPIO_5V REGULATOR
+                240,    # [13] wkupOnChargeCfg
+                0,      # [14] wkupOnChargeCfg
+                194,    # [15] battery charge
+                52,     # [16] temperature
+                161,    # [17] batVolt
+                15,     # [18] batVolt
+                64,     # [19] gpio5V
+                20,     # [20] gpio5V
+                0x84,   # [21] curr5Vgpio - negative current
+                0xfe,   # [22] curr5Vgpio
+                0,      # [23]
+                0,      # [24]
+                0,      # [25]
+                0,      # [26]
+                0,      # [27]
+                0,      # [28]
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
                 20,
-                4,
-                7,
-                18,
-                34,
-                235,
-                1,
-                200,
-                9,
-                240,
-                0,
-                194,
-                52,
-                161,
-                15,
-                64,
-                20,
-                124,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                115,
+                6,      # [ 1] WAKEUP_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                0x13,   # [ 7] GetDateTime buf[5] month wrong month to rise exception
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] triggers
+                200,    # [11] status
+                9,      # [12] GPIO_5V REGULATOR
+                240,    # [13] wkupOnChargeCfg
+                0,      # [14] wkupOnChargeCfg
+                194,    # [15] battery charge
+                52,     # [16] temperature
+                161,    # [17] batVolt
+                15,     # [18] batVolt
+                64,     # [19] gpio5V
+                20,     # [20] gpio5V
+                124,    # [21] curr5Vgpio
+                1,      # [22] curr5Vgpio
+                0,      # [23]
+                0,      # [24]
+                0,      # [25]
+                0,      # [26]
+                0,      # [27]
+                0,      # [28]
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                30,
+                6,      # [ 1] WAKEUP_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                0x42,   # [ 4] GetDateTime buf[2] hour and flags: 2AM
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] triggers
+                200,    # [11] status
+                9,      # [12] GPIO_5V REGULATOR
+                240,    # [13] wkupOnChargeCfg
+                0,      # [14] wkupOnChargeCfg
+                194,    # [15] battery charge
+                52,     # [16] temperature
+                161,    # [17] batVolt
+                15,     # [18] batVolt
+                64,     # [19] gpio5V
+                20,     # [20] gpio5V
+                124,    # [21] curr5Vgpio
+                1,      # [22] curr5Vgpio
+                0,      # [23]
+                0,      # [24]
+                0,      # [25]
+                0,      # [26]
+                0,      # [27]
+                0,      # [28]
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
             ],
             [
                 1,
-                4,
-                64,
-                71,
-                20,
-                4,
-                8,
-                18,
-                34,
-                235,
-                1,
-                200,
-                9,
-                240,
-                0,
-                194,
-                52,
-                161,
-                15,
-                64,
-                20,
-                124,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                115,
+                4,      # 5VREG_ON
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] NO ENOUGHR POWER flag 0x01
+                200,    # [11] battery
+                9,      # [12] battery
+                240,    # [13] battery
+                0,      # [14] battery
+                194,    # [15] battery
+                52,     # [16] battery
+                161,    # [17] battery
+                15,     # [18] battery
+                64,     # [19] battery
+                20,     # [20] battery
+                124,    # [21] reg5v
+                1,      # [22] reg5v
+                0,      # [23] reg5v
+                0,      # [24] reg5v
+                0,      # [25] reg5v
+                0,      # [26] reg5v
+                0,      # [27] reg5v
+                0,      # [28] reg5v
+                0,      # [29] reg5v
+                0,      # [30] reg5v
+                115,    # [31]
             ],
             [
                 2,
-                5,
-                64,
-                71,
-                20,
-                4,
-                9,
-                18,
-                34,
-                235,
-                1,
-                200,
-                9,
-                240,
-                0,
-                194,
-                52,
-                161,
-                15,
-                64,
-                20,
-                124,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                115,
+                5,      # 5VREG_OFF
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] triggers
+                200,    # [11] SoC %
+                9,      # [12] SoC C
+                240,    # [13] curr5Vgpio
+                0,      # [14] gpio5V
+                194,    # [15] batSignal
+                52,     # [16] batSignal
+                161,    # [17] batSignal
+                15,     # [18] batSignal
+                64,     # [19] batSignal
+                20,     # [20] batSignal
+                124,    # [21] batSignal
+                1,      # [22] batSignal
+                0,      # [23] curr5vSignal
+                0,      # [24] curr5vSignal
+                0,      # [25] curr5vSignal
+                0,      # [26] curr5vSignal
+                0,      # [27] curr5vSignal
+                0,      # [28] curr5vSignal
+                0,      # [29] curr5vSignal
+                0,      # [30] curr5vSignal
+                115,    # [31]
             ],
             [
                 3,
-                7,
-                64,
-                71,
-                20,
-                4,
-                10,
-                18,
-                34,
-                235,
-                1,
-                200,
-                9,
-                240,
-                0,
-                194,
-                52,
-                161,
-                15,
-                64,
-                20,
-                124,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                115,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                1,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                23,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                0x05,   # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01 and 0x04 on
+                0x01,   # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                1,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                33,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                0x80,   # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                1,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                43,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                0x80,   # [20] GetAlarm buf[0] second
+                0x80,   # [21] GetAlarm buf[1] minute
+                1,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0x0a,   # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                53,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0x40,   # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                63,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0x80,   # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                73,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0x80,   # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0xff,   # [24] GetAlarm buf[4] hours mask1
+                0xff,   # [25] GetAlarm buf[5] hours mask2
+                0xff,   # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                83,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0x40,   # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                93,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0x80,   # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0x02,   # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                103,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0xc0,   # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0x02,   # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                113,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0xc0,   # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0xff,   # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                123,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0x80,   # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                1,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                133,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0xc0,   # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                1,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                143,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0xc0,   # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0x10,   # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                153,
+                7,      # ALARM_EVT
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                0xc0,   # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0x02,   # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
             ],
             [
                 4,
-                8,
-                64,
-                71,
-                20,
-                4,
-                11,
-                18,
-                34,
-                235,
-                1,
-                200,
-                9,
-                240,
-                0,
-                194,
-                52,
-                161,
-                15,
-                64,
-                20,
-                124,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                115,
+                8,      # MCU_RESET
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] powerInput5vIo
+                200,    # [11] status
+                9,      # [12] GPIO_5V: REGULATOR
+                240,    # [13] wkupOnChargeCfg
+                0,      # [14] wkupOnChargeCfg
+                194,    # [15] battery charge
+                52,     # [16] temperature
+                161,    # [17] batVolt
+                15,     # [18] batVolt
+                64,     # [19] gpio5V
+                20,     # [20] gpio5V
+                124,    # [21] curr5Vgpio
+                1,      # [22] curr5Vgpio
+                0,      # [23]
+                0,      # [24]
+                0,      # [25]
+                0,      # [26]
+                0,      # [27]
+                0,      # [28]
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
+            ],
+            [
+                14,
+                8,      # MCU_RESET
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] powerInput5vIo
+                200,    # [11] status
+                9,      # [12] GPIO_5V: REGULATOR
+                240,    # [13] wkupOnChargeCfg
+                0,      # [14] wkupOnChargeCfg
+                194,    # [15] battery charge
+                52,     # [16] temperature
+                161,    # [17] batVolt
+                15,     # [18] batVolt
+                64,     # [19] gpio5V
+                20,     # [20] gpio5V
+                0x84,   # [21] curr5Vgpio
+                0xfe,   # [22] curr5Vgpio
+                0,      # [23]
+                0,      # [24]
+                0,      # [25]
+                0,      # [26]
+                0,      # [27]
+                0,      # [28]
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
             ],
             [
                 5,
-                10,
-                64,
-                71,
-                20,
-                4,
-                12,
-                18,
-                34,
-                235,
-                1,
-                200,
-                9,
-                240,
-                0,
-                194,
-                52,
-                161,
-                15,
-                64,
-                20,
-                124,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                115,
+                10,     # ALARM_WRITE
+                64,     # [ 2] GetDateTime buf[0] second
+                71,     # [ 3] GetDateTime buf[1] minute
+                20,     # [ 4] GetDateTime buf[2] hour and flags: 0x40 12hours format
+                4,      # [ 5] GetDateTime buf[3] weekday
+                7,      # [ 6] GetDateTime buf[4] day
+                18,     # [ 7] GetDateTime buf[5] month
+                34,     # [ 8] GetDateTime buf[6] year
+                235,    # [ 9] GetDateTime buf[7] subsecond
+                1,      # [10] GetAlarmStatus buf[0] wakeup_enabled if 0x01) and 0x04 on
+                200,    # [11] GetAlarmStatus buf[1] alarm_flag if 0x01
+                0,      # [12]
+                240,    # [13] status
+                0,      # [14] battery charge
+                194,    # [15] temperature
+                52,     # [16] batVolt
+                161,    # [17] batVolt
+                0,      # [18]
+                0,      # [19]
+                20,     # [20] GetAlarm buf[0] second
+                0x52,   # [21] GetAlarm buf[1] minute
+                1,      # [22] GetAlarm buf[2] hour and flags: 0x40 12hours format
+                0,      # [23] GetAlarm buf[3] weekday and flags
+                0,      # [24] GetAlarm buf[4] hours mask1
+                0,      # [25] GetAlarm buf[5] hours mask2
+                0,      # [26] GetAlarm buf[6] hours mask3
+                0,      # [27] GetAlarm buf[7] minute_period
+                0,      # [28] GetAlarm buf[8] 0xFF to indicate EVERY_DAY or day mask
+                0,      # [29]
+                0,      # [30]
+                115,    # [21]
             ],
             [
                 0,
@@ -421,6 +1040,7 @@ class SMBus:
         self.cmd_buffers[0x70] = [35, 0, 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 248]
         self.cmd_buffers[0x72] = [128, 53, 170, 178, 201, 155]
         self.cmd_buffers[0x75] = [117, 53, 191]
+        self.cmd_buffers[0x77] = [128, 53, 170, 178, 201, 155]
         self.cmd_buffers[0x7A] = [122, 53, 176]
         self.cmd_buffers[0x7C] = [20, 235]
         self.cmd_buffers[0x7D] = [104, 151]
@@ -464,6 +1084,7 @@ class SMBus:
             0,
             212,
         ]
+        self.cmd_buffers[0xF8] = [9, 0, 0, 0, 0]
         self.cmd_buffers[0xFD] = [22, 0, 233]
 
         if SMBus.INIT_ADJUSTMENTS:
@@ -494,18 +1115,19 @@ class SMBus:
 
     def _set_buff(self, cmd, data):
         """Set data buffer for the command - to be used from test script."""
-        self.cmd_buffers[cmd] = data
-        if cmd == BUTTON_EVENT_CMD:
-            self.cmd_buffers[STATUS_CMD][0] |= 0b00000010
-        if cmd == FAULT_EVENT_CMD:
-            if data[0] != 0:
-                self.cmd_buffers[STATUS_CMD][0] |= 0b00000001
-            else:
-                self.cmd_buffers[STATUS_CMD][0] &= 0b11111110
+        if data is not None:
+            self.cmd_buffers[cmd] = data.copy()
+            if cmd == BUTTON_EVENT_CMD:
+                self.cmd_buffers[STATUS_CMD][0] |= 0b00000010
+            if cmd == FAULT_EVENT_CMD:
+                if data[0] != 0:
+                    self.cmd_buffers[STATUS_CMD][0] |= 0b00000001
+                else:
+                    self.cmd_buffers[STATUS_CMD][0] &= 0b11111110
 
     def _get_buff(self, cmd):
         """Get data buffer for the command - to be used from test script."""
-        return self.cmd_buffers[cmd]
+        return self.cmd_buffers[cmd].copy()
 
     def _get_check_sum(self, data):
         """Calculate checksum for given array."""
@@ -526,7 +1148,7 @@ class SMBus:
             else:
                 del self.err_sim[cmd]
 
-    def read_i2c_block_data(self, addr, cmd, length):
+    def read_i2c_block_data(self, addr, cmd, _length):
         """Read block data for command."""
         if self.signal_error_next_read_call:
             self.signal_error_next_read_call = False
@@ -542,7 +1164,11 @@ class SMBus:
             self.logging_type = 0
         else:
             if addr == SMBus.SIM_ADDR:
-                _d = self.cmd_buffers[cmd].copy()
+                if self.temp_read_cmd == cmd:
+                    _d = self.temp_read_cmd_buff
+                    self.temp_read_cmd = 0
+                else:
+                    _d = self.cmd_buffers[cmd].copy()
             else:
                 _d = self.cmd_buffers_wrong[cmd].copy()
         if self.corrupt_next_read_call:

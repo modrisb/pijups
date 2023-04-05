@@ -256,7 +256,6 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
                     options_flow_result["flow_id"], user_input={}
                 )
             )
-            print("++++++", fw_upgrade_finished_done)
             assert fw_upgrade_finished_done is not None
             assert fw_upgrade_finished_done["type"] == FlowResultType.CREATE_ENTRY
 

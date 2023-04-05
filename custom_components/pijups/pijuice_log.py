@@ -417,7 +417,7 @@ def GetPiJuiceLog(ifs):
         else:  # elif ret['error'] == 'COMMUNICATION_ERROR':
             print(ret)
             return ret
-
+"""
 if __name__ == "__main__":
     ifs = PiJuiceInterface(1,0x14)
 
@@ -501,3 +501,4 @@ if __name__ == "__main__":
     else:
         print ('failed to read log')
         exit(-1)
+"""
