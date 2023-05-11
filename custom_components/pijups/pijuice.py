@@ -82,7 +82,6 @@ class PiJuiceInterface(object):
 
     def _DoTransfer(self, oper):
         self.force =  True  if (self.t is not None and self.t.is_alive()) else None
-        _LOGGER.debug(f"_DoTransfer force={self.force}")
         self.t = threading.Thread(target=oper, args=())
         self.t.start()
 
@@ -90,7 +89,6 @@ class PiJuiceInterface(object):
         self.t.join(timeout=0.1)
 
         r_code = not (self.comError or self.t.is_alive())
-        _LOGGER.debug(f"_DoTransfer return code={r_code}")
         return r_code
 
     def ReadData(self, cmd, length):
