@@ -1148,7 +1148,7 @@ class SMBus:
             else:
                 del self.err_sim[cmd]
 
-    def read_i2c_block_data(self, addr, cmd, _length):
+    def read_i2c_block_data(self, addr, cmd, _length, force=None):
         """Read block data for command."""
         if self.signal_error_next_read_call:
             self.signal_error_next_read_call = False
@@ -1181,7 +1181,7 @@ class SMBus:
             time.sleep(self.read_write_delay)
         return _d
 
-    def write_i2c_block_data(self, addr, cmd, data):
+    def write_i2c_block_data(self, addr, cmd, data, force=None):
         """Write block data for command."""
         if self.signal_error_next_write_call:
             self.signal_error_next_write_call = False

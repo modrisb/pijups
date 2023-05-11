@@ -36,6 +36,8 @@ class PiJuiceInterface(object):
         self.t = None
         self.comError = False
         self.errTime = 0
+        self.force = None
+        self.semaphore = threading.Semaphore(1)
 
     def __del__(self):
         """Clean up any resources used by the PiJuice instance."""
@@ -62,7 +64,7 @@ class PiJuiceInterface(object):
 
     def _Read(self):
         try:
-            d = self.i2cbus.read_i2c_block_data(self.addr, self.cmd, self.length)
+            d = self.i2cbus.read_i2c_block_data(self.addr, self.cmd, self.length, force=self.force)
             self.d = d
             self.comError = False
         except:  # IOError:
@@ -72,39 +74,33 @@ class PiJuiceInterface(object):
 
     def _Write(self):
         try:
-            self.i2cbus.write_i2c_block_data(self.addr, self.cmd, self.d)
+            self.i2cbus.write_i2c_block_data(self.addr, self.cmd, self.d, force=self.force)
             self.comError = False
         except:  # IOError:
             self.comError = True
             self.errTime = time.time()
 
     def _DoTransfer(self, oper):
-        if (self.t is not None and self.t.is_alive()) or (
-            self.comError and (time.time() - self.errTime) < 4
-        ):
-            return False
-
+        self.force =  True  if (self.t is not None and self.t.is_alive()) else None
+        _LOGGER.debug(f"_DoTransfer force={self.force}")
         self.t = threading.Thread(target=oper, args=())
         self.t.start()
 
         # wait for transfer to finish or timeout
-        n = 0
-        while self.t.is_alive() and n < 2:
-            time.sleep(0.05)
-            n = n + 1
-        if self.comError or self.t.is_alive():
-            self.t.join(timeout=0)
-            return False
+        self.t.join(timeout=0.1)
 
-        return True
+        r_code = not (self.comError or self.t.is_alive())
+        _LOGGER.debug(f"_DoTransfer return code={r_code}")
+        return r_code
 
     def ReadData(self, cmd, length):
         d = []
 
-        self.cmd = cmd
-        self.length = length + 1
-        if not self._DoTransfer(self._Read):
-            return {"error": "COMMUNICATION_ERROR"}
+        with self.semaphore:
+            self.cmd = cmd
+            self.length = length + 1
+            if not self._DoTransfer(self._Read):
+                return {"error": "COMMUNICATION_ERROR"}
 
         d = self.d
         if self._GetChecksum(d[0:-1]) != d[-1]:
@@ -124,10 +120,11 @@ class PiJuiceInterface(object):
         d = data[:]
         d.append(fcs)
 
-        self.cmd = cmd
-        self.d = d
-        if not self._DoTransfer(self._Write):
-            return {"error": "COMMUNICATION_ERROR"}
+        with self.semaphore:
+            self.cmd = cmd
+            self.d = d
+            if not self._DoTransfer(self._Write):
+                return {"error": "COMMUNICATION_ERROR"}
 
         return {"error": "NO_ERROR"}
 
