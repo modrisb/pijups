@@ -114,7 +114,6 @@ class PiJups:
             raise BlockingIOError
 
         self.piju_device_info = DeviceInfo(
-            id=entry.unique_id,
             identifiers={(DOMAIN, entry.unique_id)},
             name=DEFAULT_NAME,
             sw_version=self.fw_version,

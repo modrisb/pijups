@@ -86,27 +86,27 @@
     },
     "selector": {
         "battery_profile_status": {
-            "options" : {
-                "PJZERO_1000": "PJZERO 1000",
-                "BP7X_1820": "BP7X 1820",
-                "SNN5843_2300": "SNN5843 2300",
-                "PJLIPO_12000": "PJLIPO 12000",
-                "PJLIPO_5000": "PJLIPO 5000",
-                "PJBP7X_1600": "PJBP7X 1600",
-                "PJSNN5843_1300": "PJSNN5843 1300",
-                "PJZERO_1200": "PJZERO 1200",
+            "options": {
                 "BP6X_1400": "BP6X 1400",
-                "PJLIPO_600": "PJLIPO 600",
+                "BP7X_1820": "BP7X 1820",
+                "PJBP7X_1600": "PJBP7X 1600",
+                "PJLIPO_12000": "PJLIPO 12000",
+                "PJLIPO_2500": "PJLIPO 2500",
                 "PJLIPO_500": "PJLIPO 500",
-                "PJLIPO_2500": "PJLIPO 2500"
+                "PJLIPO_5000": "PJLIPO 5000",
+                "PJLIPO_600": "PJLIPO 600",
+                "PJSNN5843_1300": "PJSNN5843 1300",
+                "PJZERO_1000": "PJZERO 1000",
+                "PJZERO_1200": "PJZERO 1200",
+                "SNN5843_2300": "SNN5843 2300"
             }
         },
         "battery_temp_sense_config": {
             "options": {
+                "AUTO_DETECT": "HAT to select sensor",
                 "NOT_USED": "temperature not measured",
                 "NTC": "use battery sensor",
-                "ON_BOARD": "use on board sensor",
-                "AUTO_DETECT": "HAT to select sensor"
+                "ON_BOARD": "use on board sensor"
             }
         },
         "diag_log_config": {

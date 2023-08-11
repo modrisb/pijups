@@ -5,6 +5,7 @@ import ctypes
 import sys
 import threading
 import time
+import logging
 
 from smbus2 import SMBus
 
@@ -23,6 +24,7 @@ pijuice_user_functions = ["USER_EVENT"] + [
     "USER_FUNC" + str(i + 1) for i in range(0, 15)
 ]
 
+_LOGGER = logging.getLogger(__name__)
 
 class PiJuiceInterface(object):
     def __init__(self, bus=1, address=0x14):
@@ -82,6 +84,7 @@ class PiJuiceInterface(object):
 
     def _DoTransfer(self, oper):
         self.force =  True  if (self.t is not None and self.t.is_alive()) else None
+        #_LOGGER.debug(f"_DoTransfer force={self.force}")
         self.t = threading.Thread(target=oper, args=())
         self.t.start()
 
@@ -89,6 +92,7 @@ class PiJuiceInterface(object):
         self.t.join(timeout=0.1)
 
         r_code = not (self.comError or self.t.is_alive())
+        #_LOGGER.debug(f"_DoTransfer return code={r_code}")
         return r_code
 
     def ReadData(self, cmd, length):
@@ -101,6 +105,7 @@ class PiJuiceInterface(object):
                 return {"error": "COMMUNICATION_ERROR"}
 
         d = self.d
+        _LOGGER.info("ReadData cmd 0x%x= %s %x (%x)", cmd, d, d[-1], self._GetChecksum(d[0:-1]))
         if self._GetChecksum(d[0:-1]) != d[-1]:
             # With n+1 byte data (n data bytes and 1 checksum byte) sometimes the
             # MSbit of the first received data byte is 0 while it should be 1. So we
@@ -109,6 +114,8 @@ class PiJuiceInterface(object):
             if self._GetChecksum(d[0:-1]) == d[-1]:
                 del d[-1]
                 return {"data": d, "error": "NO_ERROR"}
+            _LOGGER.info(
+                "ReadData cmd 0x%x= %x (%x)", cmd, d, self._GetChecksum(d[0:-1]))
             return {"error": "DATA_CORRUPTED"}
         del d[-1]
         return {"data": d, "error": "NO_ERROR"}
