@@ -22,11 +22,14 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
     PERCENTAGE,
     RESTART_EXIT_CODE,
-    SERVICE_HOMEASSISTANT_RESTART,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
     UnitOfTemperature,
 )
+from homeassistant.components.homeassistant.const import (
+    SERVICE_HOMEASSISTANT_RESTART,
+)
+
 from homeassistant.core import DOMAIN as HOMEASSISTANT_DOMAIN, Event, HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
