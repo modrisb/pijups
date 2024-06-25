@@ -6,7 +6,10 @@ from homeassistant.components.hassio import (
 )
 from homeassistant.components.pijups.interface import PiJups
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import RESTART_EXIT_CODE, SERVICE_HOMEASSISTANT_RESTART
+from homeassistant.const import RESTART_EXIT_CODE
+from homeassistant.components.homeassistant.const import (
+    SERVICE_HOMEASSISTANT_RESTART,
+)
 from homeassistant.core import (
     DOMAIN as HOMEASSISTANT_DOMAIN,
     HomeAssistant,

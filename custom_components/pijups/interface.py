@@ -1,6 +1,7 @@
 """The PiJuPS HAT integration - interface to PiJuice API."""
 
 from datetime import datetime
+from datetime import UTC
 import logging
 import os
 import re
@@ -127,7 +128,7 @@ class PiJups:
 
     def get_piju_status(self, force_update=False):
         """Get cached HAT status, use scan interval as caching time parameter."""
-        time_now = datetime.utcnow()
+        time_now = datetime.now(UTC)
         if force_update or (
             time_now - self.piju_status_read_at
         ).total_seconds() * 1.1 > self.config_entry.options.get(CONF_SCAN_INTERVAL):
@@ -315,7 +316,7 @@ class PiJups:
 
     def set_up_ups(self):
         """Set UPS RTC to UTC time, clean faults and button events."""
-        t_curr = datetime.utcnow()
+        t_curr = datetime.now(UTC)
         t_pi = {
             "second": t_curr.second,
             "minute": t_curr.minute,

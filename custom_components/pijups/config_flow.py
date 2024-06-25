@@ -131,13 +131,14 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
         self.init_input = None
         self.hass = core.async_get_hass()
         self.pijups: PiJups = self.hass.data[DOMAIN][config_entry.entry_id][BASE]
-        self.flow_task = None
         self.fw_task = None
         self.default_options = None
         self.default_logging = None
         self.fw_options = None
         self.fw_page_count = None
         self.fw_processed_pages = None
+        self.fw_progress_action = None
+
         self.fw_update_time = None
 
     @staticmethod
@@ -296,8 +297,7 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
         errors = {}
         if user_input is not None:
             self.fw_task = None
-            self.flow_task = None
-            self.hass.async_create_task(self.async_background_status())
+            self.fw_task = self.hass.async_create_task(self.async_background_status())
             return await self.async_step_firmware_progress()
         return self.async_show_form(
             step_id="firmware_confirm",
@@ -315,18 +315,12 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
             self.fw_page_count,
             self.fw_processed_pages,
         )
-        if self.fw_task is None or self.fw_task.poll() is None:
-            if self.fw_page_count is not None:
-                progress_action = f"fw_p_{int((self.fw_page_count - self.fw_processed_pages) * 10 / self.fw_page_count)}"
-            else:
-                progress_action = "fw_started"
-            ret_data = self.async_show_progress(
-                step_id="firmware_progress",
-                progress_action=progress_action,
-            )
-        else:
-            progress_action = None
-            ret_data = self.async_show_progress_done(next_step_id="firmware_finish")
+        try:
+            await self.fw_task
+        finally:
+            self.fw_task = None
+
+        ret_data = self.async_show_progress_done(next_step_id="firmware_finish")
         return ret_data
 
     async def async_background_status(self):
@@ -346,7 +340,7 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        self.fw_task = fw_upgrade_process
+        #self.fw_task = fw_upgrade_process
         try:
             with fw_upgrade_process.stdout as pipe:
                 for line in iter(pipe.readline, b""):
@@ -365,20 +359,20 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
                                 )
                             ]
                         )
-                        if time.time() - self.fw_update_time >= FW_PROGRESS_INTERVAL:
-                            self.fw_update_time += FW_PROGRESS_INTERVAL
-                            await self.async_start_conf()
+                    if self.fw_page_count is not None and self.fw_processed_pages is not None:
+                        progress_action = f"fw_p_{int((self.fw_page_count - self.fw_processed_pages) * 10 / self.fw_page_count)}"
+                    else:
+                        progress_action = "fw_started"
+                    if self.fw_progress_action != progress_action:
+                        self.async_show_progress(
+                            step_id="firmware_progress",
+                            progress_action=progress_action,
+                            progress_task=self.fw_task,
+                        )
+                        self.fw_progress_action = progress_action
         finally:
             pass
         self.pijups.piju_enabled = True  # enable requests to device
-
-    async def async_start_conf(self):
-        """Run async_configure to continue progress loop."""
-        if self.fw_processed_pages is not None:
-            self.flow_task = self.hass.async_create_task(
-                self.hass.config_entries.options.async_configure(flow_id=self.flow_id)
-            )
-        await asyncio.sleep(0.2)
 
     async def async_step_firmware_finish(
         self, user_input: dict[str, Any] = None

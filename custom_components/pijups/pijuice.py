@@ -105,7 +105,6 @@ class PiJuiceInterface(object):
                 return {"error": "COMMUNICATION_ERROR"}
 
         d = self.d
-        _LOGGER.info("ReadData cmd 0x%x= %s %x (%x)", cmd, d, d[-1], self._GetChecksum(d[0:-1]))
         if self._GetChecksum(d[0:-1]) != d[-1]:
             # With n+1 byte data (n data bytes and 1 checksum byte) sometimes the
             # MSbit of the first received data byte is 0 while it should be 1. So we
@@ -114,8 +113,6 @@ class PiJuiceInterface(object):
             if self._GetChecksum(d[0:-1]) == d[-1]:
                 del d[-1]
                 return {"data": d, "error": "NO_ERROR"}
-            _LOGGER.info(
-                "ReadData cmd 0x%x= %x (%x)", cmd, d, self._GetChecksum(d[0:-1]))
             return {"error": "DATA_CORRUPTED"}
         del d[-1]
         return {"data": d, "error": "NO_ERROR"}

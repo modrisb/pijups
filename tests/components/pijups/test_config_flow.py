@@ -221,43 +221,13 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
             )
             assert fw_upgrade_confirmation is not None
             assert fw_upgrade_confirmation["step_id"] == "firmware_confirm"
-            fw_upgrade_inprogress = await hass.config_entries.options.async_configure(
+            assert fw_upgrade_confirmation["type"] == FlowResultType.FORM
+            fw_upgrade_finished = await hass.config_entries.options.async_configure(
                 options_flow_result["flow_id"], user_input={}
             )
             assert pijups.piju_enabled
-            assert fw_upgrade_inprogress is not None
-            assert fw_upgrade_inprogress["step_id"] == "firmware_progress"
-            assert fw_upgrade_inprogress["progress_action"] == "fw_started"
-            await asyncio.sleep(0)
-            assert not pijups.piju_enabled
-
-            while True:
-                await asyncio.sleep(3)
-                fw_upgrade_done = await hass.config_entries.options.async_configure(
-                    options_flow_result["flow_id"],
-                )
-                assert fw_upgrade_done is not None
-                if fw_upgrade_done["step_id"] == "firmware_finish":
-                    break
-                assert not pijups.piju_enabled
-
-            assert fw_upgrade_done["step_id"] == "firmware_finish"
-            await hass.async_block_till_done()
-
-            fw_upgrade_finished = await hass.config_entries.options.async_configure(
-                options_flow_result["flow_id"],
-            )
             assert fw_upgrade_finished is not None
-            assert fw_upgrade_finished["type"] == FlowResultType.FORM
-            assert fw_upgrade_finished["errors"] == {}
-
-            fw_upgrade_finished_done = (
-                await hass.config_entries.options.async_configure(
-                    options_flow_result["flow_id"], user_input={}
-                )
-            )
-            assert fw_upgrade_finished_done is not None
-            assert fw_upgrade_finished_done["type"] == FlowResultType.CREATE_ENTRY
+            assert fw_upgrade_finished["type"] == FlowResultType.CREATE_ENTRY
 
         await common.pijups_setup_and_run_test(
             hass, True, run_test_entry_options_with_firmware_upgrade

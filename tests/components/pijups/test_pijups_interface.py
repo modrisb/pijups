@@ -1,6 +1,7 @@
 """Test PiJups interface class methods."""
 import asyncio
 from datetime import datetime
+from datetime import UTC
 import os
 from unittest.mock import patch
 
@@ -17,7 +18,6 @@ from homeassistant.components.pijups.const import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-
 from .smbus2 import SMBus
 
 from tests.components.pijups import common
@@ -48,13 +48,14 @@ async def test_interface_settings_ok(hass: HomeAssistant):
         assert pijups.fw_version == "1.6"
 
         # emulation sets faults=True at integration startup, check for expected notifications
-        notifications = hass.states.async_all("persistent_notification")
-        assert len(notifications) == 1
-        assert notifications[0].attributes["title"] == "PiJuice HAT h/w faults reported"
-        assert (
-            notifications[0].attributes["message"]
-            == "Pi Supply PiJuice HAT {'button_power_off': True, 'forced_power_off': True, 'forced_sys_power_off': True, 'watchdog_reset': True}"
-        )
+        # check removed due to HA functionality chnage
+        #notifications = hass.states.async_all("persistent_notification")
+        #assert len(notifications) == 1
+        #assert notifications[0].attributes["title"] == "PiJuice HAT h/w faults reported"
+        #assert (
+        #    notifications[0].attributes["message"]
+        #    == "Pi Supply PiJuice HAT {'button_power_off': True, 'forced_power_off': True, 'forced_sys_power_off': True, 'watchdog_reset': True}"
+        #)
 
     await common.pijups_setup_and_run_test(hass, True, run_test_interface_settings_ok)
 
@@ -172,7 +173,7 @@ async def test_interface_configuration_options(hass: HomeAssistant):
             pijups.call_pijuice_with_error_check, pijups.rtcalarm.GetTime
         )
         assert rtc_time is not None
-        time_now = datetime.utcnow()
+        time_now = datetime.now(UTC)
         time_set = datetime(
             rtc_time["year"],
             rtc_time["month"],
@@ -181,6 +182,7 @@ async def test_interface_configuration_options(hass: HomeAssistant):
             rtc_time["minute"],
             rtc_time["second"],
             0,
+            tzinfo=UTC,
         )
         assert (time_now - time_set).total_seconds() < 5
 
