@@ -1,4 +1,5 @@
 {
-  "name": "PiJuice Hat",
-  "render_readme": true
+  "name": "PiJuice i2c UPS HAT",
+  "render_readme": true,
+  "country": ["ALL"]
 }
