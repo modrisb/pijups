@@ -1,5 +1,4 @@
 {
   "name": "PiJuice i2c UPS HAT",
-  "render_readme": true,
-  "country": ["ALL"]
+  "render_readme": true
 }
