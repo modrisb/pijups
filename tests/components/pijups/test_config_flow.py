@@ -222,12 +222,17 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
             assert fw_upgrade_confirmation is not None
             assert fw_upgrade_confirmation["step_id"] == "firmware_confirm"
             assert fw_upgrade_confirmation["type"] == FlowResultType.FORM
-            fw_upgrade_finished = await hass.config_entries.options.async_configure(
-                options_flow_result["flow_id"], user_input={}
-            )
+            while True:
+                fw_upgrade_progress = await hass.config_entries.options.async_configure(
+                    options_flow_result["flow_id"], user_input={}
+                )
+                assert fw_upgrade_progress is not None
+                if fw_upgrade_progress["type"] == FlowResultType.SHOW_PROGRESS:
+                    assert not pijups.piju_enabled
+                else:
+                    assert fw_upgrade_progress["type"] == FlowResultType.CREATE_ENTRY   #SHOW_PROGRESS_DONE
+                    break
             assert pijups.piju_enabled
-            assert fw_upgrade_finished is not None
-            assert fw_upgrade_finished["type"] == FlowResultType.CREATE_ENTRY
 
         await common.pijups_setup_and_run_test(
             hass, True, run_test_entry_options_with_firmware_upgrade
