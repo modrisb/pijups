@@ -37,6 +37,7 @@ DEFAULT_FAST_SCAN_COUNT = 1
 DEFAULT_FIRMWARE_PATH = "/config/custom_components"
 DEFAULT_NO_FIRMWARE_UPGRADE = "No firmware upgrade"
 DEFAULT_FW_UTILITY_NAME = "pijuiceboot"
+DEFAULT_FW_FILE_NAME = "PiJuice-V(\\d+)\\.(\\d+)_(\\d+_\\d+_\\d+).elf.binary"
 FW_PROGRESS_INTERVAL = 4
 FW_PAGE_COUNT_LINE_PREFIX = "page count "
 FW_PROCESSED_PAGE_LINE_PREFIX = "Page "

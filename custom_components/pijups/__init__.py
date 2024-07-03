@@ -18,6 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 #  eg <cover.py> and <sensor.py>
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
+def get_local_platform_module(platform, name):
+    return importlib.import_module("." + platform, name)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up PiJups from a config entry."""
@@ -30,7 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.async_add_executor_job(pijups.configure_device, hass, entry)
     # set scan interval to integration configuration for all integrated platforms
     for platform in PLATFORMS:
-        module = importlib.import_module("." + platform, __name__)
+        module = await hass.async_add_executor_job(get_local_platform_module, platform, __name__)
         if "SCAN_INTERVAL" in dir(module):
             module.SCAN_INTERVAL = timedelta(
                 seconds=entry.options.get(CONF_SCAN_INTERVAL)

@@ -29,6 +29,7 @@ from .const import (
     CONF_MANUFACTURER,
     CONF_MODEL,
     DEFAULT_FW_UTILITY_NAME,
+    DEFAULT_FW_FILE_NAME,
     DEFAULT_NAME,
     DEFAULT_NO_FIRMWARE_UPGRADE,
     DOMAIN,
@@ -300,7 +301,7 @@ class PiJups:
         ]
         fw_files_local = os.listdir(fw_path)
         fw_exe_pat = re.compile("^" + DEFAULT_FW_UTILITY_NAME + "$")
-        fw_bin_pat = re.compile("PiJuice-V(\\d+)\\.(\\d+)_(\\d+_\\d+_\\d+).elf.binary")
+        fw_bin_pat = re.compile("^" + DEFAULT_FW_FILE_NAME + "$")
         exe_files = [s for s in fw_files_local if fw_exe_pat.match(s)]
         bin_files = [s for s in fw_files_local if fw_bin_pat.match(s)]
         fw_file_list = [DEFAULT_NO_FIRMWARE_UPGRADE]

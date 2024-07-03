@@ -4,7 +4,7 @@
     "documentation": "https://github.com/modrisb/pijups/",
     "issue_tracker": "https://github.com/modrisb/pijups/issues",
     "requirements": ["smbus2==0.4.1"],
-    "version": "1.2.7",
+    "version": "1.2.8",
     "dependencies": [],
     "codeowners": ["@modrisb"],
     "config_flow": true,

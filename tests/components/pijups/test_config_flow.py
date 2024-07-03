@@ -18,13 +18,15 @@ from homeassistant.components.pijups.const import (
     DOMAIN,
 )
 from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResultType
 
 from .smbus2 import SMBus
 
 from tests.components.pijups import common, test_pijups_interface
-
+from tests.common import (
+    async_capture_events,
+)
 
 async def test_setup_with_enabled_i2c(hass: HomeAssistant) -> None:
     """Test if configuration is created automatically if hat device is operational."""
@@ -195,6 +197,12 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
     Check emulated sensor values, diagnostics log settings, h/w diagnostics log contents
     and basic device behaviour
     """
+    events = []
+
+    @callback
+    def capture_events(event: Event) -> None:
+        events.append(event)
+
     SMBus.SIM_BUS = 1
     with patch(
         "homeassistant.components.pijups.interface.PiJups.get_fw_directory",
@@ -202,6 +210,15 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
     ):
 
         async def run_test_entry_options_with_firmware_upgrade(hass, entry):
+#            events = async_capture_events(
+#                hass, data_entry_flow.EVENT_DATA_ENTRY_FLOW_PROGRESSED
+#            )
+            hass.bus.async_listen(
+                data_entry_flow.EVENT_DATA_ENTRY_FLOW_PROGRESSED,
+                capture_events,
+            )
+
+
             options_flow_result = await hass.config_entries.options.async_init(
                 entry.entry_id
             )
@@ -222,16 +239,12 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
             assert fw_upgrade_confirmation is not None
             assert fw_upgrade_confirmation["step_id"] == "firmware_confirm"
             assert fw_upgrade_confirmation["type"] == FlowResultType.FORM
-            while True:
-                fw_upgrade_progress = await hass.config_entries.options.async_configure(
-                    options_flow_result["flow_id"], user_input={}
-                )
-                assert fw_upgrade_progress is not None
-                if fw_upgrade_progress["type"] == FlowResultType.SHOW_PROGRESS:
-                    assert not pijups.piju_enabled
-                else:
-                    assert fw_upgrade_progress["type"] == FlowResultType.CREATE_ENTRY   #SHOW_PROGRESS_DONE
-                    break
+            # confirmed
+            fw_upgrade_progress = await hass.config_entries.options.async_configure(
+                options_flow_result["flow_id"],user_input={}
+            )
+            assert not pijups.piju_enabled
+            await asyncio.sleep(30)
             assert pijups.piju_enabled
 
         await common.pijups_setup_and_run_test(

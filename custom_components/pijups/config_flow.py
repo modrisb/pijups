@@ -136,10 +136,12 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
         self.default_options = None
         self.default_logging = None
         self.fw_options = None
+        self.fw_path_info = None
         self.fw_page_count = None
         self.fw_processed_pages = None
         self.fw_progress_action = None
         self.fw_progress = threading.Event()
+        self.fw_status = None
 
         self.fw_update_time = None
 
@@ -223,6 +225,10 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
             self.fw_options = await self.hass.async_add_executor_job(
                 self.pijups.get_fw_file_list, self.hass, self.config_entry
             )
+        if self.fw_path_info is None:
+            self.fw_path_info = await self.hass.async_add_executor_job(
+                self.pijups.get_fw_directory, self.hass, self.config_entry
+            )
 
         errors = {}
 
@@ -264,13 +270,13 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
                 default=self.config_entry.options.get(
                     CONF_UPS_DELAY, DEFAULT_UPS_DELAY
                 ),
-            ): vol.All(int, vol.Range(min=1, max=254)),
+            ): vol.All(int, vol.Range(min=0, max=255)),
             vol.Required(
                 CONF_UPS_WAKEON_DELTA,
                 default=self.config_entry.options.get(
                     CONF_UPS_WAKEON_DELTA, DEFAULT_UPS_WAKEON_DELTA
                 ),
-            ): vol.All(int, vol.Range(min=-1, max=254)),
+            ): vol.All(int, vol.Range(min=-1, max=100)),
             vol.Required(
                 CONF_SCAN_INTERVAL,
                 default=self.config_entry.options.get(
@@ -295,15 +301,12 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] = None
     ) -> FlowResult:
         """Validate the user input allows us to connect."""
-        _LOGGER.warning("async_step_firmware_confirm user_input=%s", user_input)
+        _LOGGER.debug("async_step_firmware_confirm user_input=%s", user_input)
         errors = {}
         if user_input is not None:
-            self.fw_task = None
             self.fw_progress.clear()
+            self.fw_progress_action = "fw_started"
             self.fw_task = self.hass.async_create_task(self.async_background_status())
-            await asyncio.sleep(0.2)
-            self.fw_progress.wait()
-            self.fw_progress.clear()
             return await self.async_step_firmware_progress()
         return self.async_show_form(
             step_id="firmware_confirm",
@@ -311,37 +314,60 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
             errors=errors,
         )
 
+    async def async_firmware_progress(self):
+        self.fw_progress.wait()
+        self.fw_progress.clear()
+        await asyncio.sleep(0.6)
+        _LOGGER.debug("async_firmware_progress %s", self.fw_progress_action)
+
     async def async_step_firmware_progress(
         self, user_input: dict[str, Any] = None
     ) -> FlowResult:
         """Validate the user input allows us to connect."""
-        _LOGGER.warning(
-            "async_step_firmware_progress user_input=%s, pages %s, done %s",
+        _LOGGER.debug(
+            "async_step_firmware_progress user_input=%s, pages %s, done %s, background task done %s %s %s",
             user_input,
             self.fw_page_count,
             self.fw_processed_pages,
+            self.fw_task.done(),
+            self.fw_progress_action,
+            self.fw_status.done() if self.fw_status else None,
         )
-        if not self.fw_task.done():
-            self.fw_progress.wait()
-            self.fw_progress.clear()
-            return self.async_show_progress(
+        if not self.fw_status:
+            self.fw_status = self.hass.async_create_task(self.async_firmware_progress())
+        if not self.fw_status.done():
+            _LOGGER.debug("async_step_firmware_progress calling async_show_progress")
+            ret_data = self.async_show_progress(
                 step_id="firmware_progress",
                 progress_action=self.fw_progress_action,
-                progress_task=self.fw_task,
+                progress_task=self.fw_status,
             )
-
-        ret_data = self.async_show_progress_done(next_step_id="firmware_finish")
+        else:
+            if not self.fw_progress_action:
+                _LOGGER.debug("async_step_firmware_progress calling async_show_progress_done")
+                ret_data = self.async_show_progress_done(next_step_id="firmware_finish")
+            else:
+                #if self.fw_status: await self.fw_status
+                #self.fw_status = self.hass.async_create_task(self.async_firmware_progress())
+                #await asyncio.sleep(0)
+                _LOGGER.debug("async_step_firmware_progress calling async_show_progress")
+                ret_data = self.async_show_progress(
+                    step_id="firmware_progress",
+                    progress_action=self.fw_progress_action,
+                    progress_task=self.fw_status,
+                )
+                #await self.fw_status
+                self.fw_status = None
+        _LOGGER.debug(
+            "async_step_firmware_progress returning %s ", ret_data['type'],
+        )
         return ret_data
 
     async def async_background_status(self):
         """FW upgrade utlity execution monitor."""
-        self.fw_progress.set()
         _LOGGER.debug("async_background_status started")
         self.pijups.piju_enabled = False  # disable requests to device
-        fw_path_info = await self.hass.async_add_executor_job(
-            self.pijups.get_fw_directory, self.hass, self.config_entry
-        )
-        fw_path = fw_path_info[CONF_FW_UPGRADE_PATH]["default"]
+        fw_path = self.fw_path_info[CONF_FW_UPGRADE_PATH]["default"]
         fw_upgrade_process = subprocess.Popen(
             [
                 fw_path + "/" + DEFAULT_FW_UTILITY_NAME,
@@ -351,12 +377,11 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        #self.fw_task = fw_upgrade_process
         try:
             with fw_upgrade_process.stdout as pipe:
                 for line in iter(pipe.readline, b""):
                     progress = line.decode()[:-1]
-                    _LOGGER.debug("%s -> %s", DEFAULT_FW_UTILITY_NAME, progress)
+                    #_LOGGER.debug("%s -> %s", DEFAULT_FW_UTILITY_NAME, progress)
                     if progress.startswith(FW_PAGE_COUNT_LINE_PREFIX):
                         self.fw_page_count = int(
                             progress[len(FW_PAGE_COUNT_LINE_PREFIX) :]
@@ -372,15 +397,16 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
                         )
                     if self.fw_page_count is not None and self.fw_processed_pages is not None:
                         progress_action = f"fw_p_{int((self.fw_page_count - self.fw_processed_pages) * 10 / self.fw_page_count)}"
-                    else:
-                        progress_action = "fw_started"
-                    if self.fw_progress_action != progress_action:
-                        self.fw_progress_action = progress_action
-                        self.fw_progress.set()
+                        if self.fw_progress_action != progress_action:
+                            _LOGGER.debug("%s -> %s %s", DEFAULT_FW_UTILITY_NAME, progress_action, self.fw_progress_action)
+                            self.fw_progress_action = progress_action
+                            self.fw_progress.set()
+                            await asyncio.sleep(0.1)
         finally:
             self.pijups.piju_enabled = True  # enable requests to device
+            self.fw_progress_action = None
             self.fw_progress.set()
-            pass
+        _LOGGER.debug("async_background_status ended")
 
     async def async_step_firmware_finish(
         self, user_input: dict[str, Any] = None
