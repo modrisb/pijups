@@ -1,6 +1,7 @@
 """Test the pijups config and config options flow."""
 import asyncio
 from unittest.mock import patch
+import re
 
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.pijups import interface
@@ -197,12 +198,7 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
     Check emulated sensor values, diagnostics log settings, h/w diagnostics log contents
     and basic device behaviour
     """
-    events = []
-
-    @callback
-    def capture_events(event: Event) -> None:
-        events.append(event)
-
+    progress_pattern = re.compile("^fw_p_[0-9]*$")
     SMBus.SIM_BUS = 1
     with patch(
         "homeassistant.components.pijups.interface.PiJups.get_fw_directory",
@@ -210,23 +206,13 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
     ):
 
         async def run_test_entry_options_with_firmware_upgrade(hass, entry):
-#            events = async_capture_events(
-#                hass, data_entry_flow.EVENT_DATA_ENTRY_FLOW_PROGRESSED
-#            )
-            hass.bus.async_listen(
-                data_entry_flow.EVENT_DATA_ENTRY_FLOW_PROGRESSED,
-                capture_events,
-            )
-
 
             options_flow_result = await hass.config_entries.options.async_init(
                 entry.entry_id
             )
             pijups: interface.PiJups = await common.get_pijups(hass, entry)
 
-            fw_upgrade_confirmation = await hass.config_entries.options.async_configure(
-                options_flow_result["flow_id"],
-                user_input={
+            fw_upgrade_configuration = {
                     CONF_UPS_DELAY: DEFAULT_UPS_DELAY,
                     CONF_UPS_WAKEON_DELTA: DEFAULT_UPS_WAKEON_DELTA,
                     CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
@@ -234,7 +220,10 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
                     CONF_BATTERY_PROFILE: "SNN5843_2300",
                     CONF_BATTERY_TEMP_SENSE_CONFIG: "NTC",
                     CONF_FIRMWARE_SELECTION: "PiJuice-V1.6_2021_09_10.elf.binary",
-                },
+                }
+            fw_upgrade_confirmation = await hass.config_entries.options.async_configure(
+                options_flow_result["flow_id"],
+                user_input=fw_upgrade_configuration,
             )
             assert fw_upgrade_confirmation is not None
             assert fw_upgrade_confirmation["step_id"] == "firmware_confirm"
@@ -243,8 +232,27 @@ async def test_entry_options_with_firmware_upgrade(hass: HomeAssistant):
             fw_upgrade_progress = await hass.config_entries.options.async_configure(
                 options_flow_result["flow_id"],user_input={}
             )
+            assert fw_upgrade_progress
             assert not pijups.piju_enabled
-            await asyncio.sleep(30)
+            last_progress_action = ""
+            while fw_upgrade_progress["type"] == FlowResultType.SHOW_PROGRESS:
+                await asyncio.sleep(0.3)
+                fw_upgrade_progress = await hass.config_entries.options.async_configure(
+                    options_flow_result["flow_id"], #user_input={}
+                )
+                assert fw_upgrade_progress
+                if fw_upgrade_progress["type"] == FlowResultType.SHOW_PROGRESS:
+                    last_progress_action = fw_upgrade_progress["progress_action"]
+                    if fw_upgrade_progress["progress_action"]:
+                        assert  progress_pattern.match(fw_upgrade_progress["progress_action"])
+            assert last_progress_action == None
+            assert fw_upgrade_progress["type"] == FlowResultType.FORM
+            fw_firmware_finish = await hass.config_entries.options.async_configure(
+                options_flow_result["flow_id"],user_input={}
+            )
+            assert fw_firmware_finish
+            assert fw_firmware_finish["type"] == FlowResultType.CREATE_ENTRY
+            assert fw_firmware_finish["data"] == fw_upgrade_configuration
             assert pijups.piju_enabled
 
         await common.pijups_setup_and_run_test(
