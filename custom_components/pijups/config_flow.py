@@ -128,7 +128,6 @@ class PiJuOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize PiJu options flow."""
-        self.config_entry = config_entry
         self.init_input = None
         self.hass = core.async_get_hass()
         self.pijups: PiJups = self.hass.data[DOMAIN][config_entry.entry_id][BASE]
