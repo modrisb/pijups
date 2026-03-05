@@ -4,7 +4,6 @@
             "device_reserved": "Check status of other PiJuice installations - they might have been disabled and blocking hardware for other installations",
             "no_device_found": "PiJuice hardware not found, check i2c settings and installation"
         },
-        "error": {},
         "step": {
             "user": {
                 "data": {
