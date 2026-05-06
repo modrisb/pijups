@@ -4,8 +4,10 @@ from dataclasses import dataclass
 import logging
 from typing import Any
 
-from homeassistant.components.hassio import (
+from homeassistant.components.hassio.const import (
     DOMAIN as HASSIO_DOMAIN,
+)
+from homeassistant.components.hassio.services import (
     SERVICE_HOST_SHUTDOWN,
 )
 from homeassistant.components.sensor import (

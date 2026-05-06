@@ -1,7 +1,9 @@
 """Test PiJups initilization path initiated from __init__.py."""
 from unittest.mock import patch
-from homeassistant.components.hassio import (
+from homeassistant.components.hassio.const import (
     DOMAIN as HASSIO_DOMAIN,
+)
+from homeassistant.components.hassio.services import (
     SERVICE_HOST_SHUTDOWN,
 )
 from homeassistant.components.pijups.interface import PiJups
